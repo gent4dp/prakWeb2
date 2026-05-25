@@ -2,58 +2,73 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
-use Illuminate\Http\Request;
+use App\Services\CategoryService;
+use App\Http\Requests\StoreCategoryRequest;
+use App\Http\Requests\UpdateCategoryRequest;
 
 class CategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    protected CategoryService $svc;
+
+    public function __construct(CategoryService $svc)
+    {
+        $this->svc = $svc;
+    }
+
     public function index()
     {
-        return response()->json(Category::all());
+        return response()->json([
+            'status' => 'success',
+            'data' => $this->svc->all(),
+            'message' => 'Berhasil menarik semua data Kategori'
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $req)
     {
-        $category = Category::create($request->all());
-
-        return response()->json($category, 201);
+        $cat = $this->svc->create($req->validated());
+        return response()->json([
+            'status' => 'success',
+            'data' => $cat,
+            'message' => 'Kategori berhasil dibuat'
+        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show($id)
     {
-        $category = Category::findOrFail($id);
-
-        return response()->json($category);
+        try {
+            $cat = $this->svc->find($id);
+            return response()->json([
+                'status' => 'success',
+                'data' => $cat,
+                'message' => 'Berhasil menarik satu data kategori'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'data' => null,
+                'message' => $e->getMessage()
+            ], 404);
+        }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
+    public function update(UpdateCategoryRequest $req, $id)
     {
-        $category = Category::findOrFail($id);
-
-        $category->update($request->all());
-
-        return response()->json($category);
+        $cat = $this->svc->update($id, $req->validated());
+        return response()->json([
+            'status' => 'success',
+            'data' => $cat,
+            'message' => 'Kategori berhasil diperbarui'
+        ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
-        Category::destroy($id);
-
-        return response()->json(null, 204);
+        $this->svc->delete($id);
+        return response()->json([
+            'status' => 'success',
+            'data' => null,
+            'message' => 'Kategori berhasil dihapus'
+        ], 204);
     }
 }
